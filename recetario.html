@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Recetario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --green:#2A5C0F;--green-light:#EBF3E4;--green-mid:#4A8A1F;
+    --terra:#C4522A;--gold:#8B6914;--gold-light:#FFFCEB;
+    --cream:#FDFBF7;--cream2:#F5F0E8;--border:#E8E2D8;
+    --text:#1A1A1A;--muted:#6B6B6B;--soft:#999;
+    --shadow:0 2px 20px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
+  }
+  body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
+  h1,h2,h3,.serif{font-family:'Playfair Display',Georgia,serif;}
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-thumb{background:#D4CBBB;border-radius:3px;}
+
+  /* ── Header ── */
+  #header{
+    background:#fff;border-bottom:1px solid var(--border);
+    padding:0 20px;position:sticky;top:0;z-index:100;
+    box-shadow:0 1px 12px rgba(0,0,0,.06);
+  }
+  #header-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 10px;}
+  #logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--green);cursor:pointer;letter-spacing:-.3px;}
+  #header-actions{display:flex;gap:8px;align-items:center;}
+  #tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;}
+  #tabs::-webkit-scrollbar{display:none;}
+
+  /* ── Buttons ── */
+  .btn{border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--green);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;}
+  .btn-primary:hover{background:var(--green-mid);}
+  .btn-reset{background:#FFF5F2;color:var(--terra);border-radius:10px;padding:8px 11px;font-size:15px;}
+  .btn-ghost{background:var(--green-light);color:var(--green);border-radius:8px;padding:6px 13px;font-size:12px;font-weight:700;}
+  .btn-danger{background:#FFF5F2;color:var(--terra);border-radius:8px;padding:6px 13px;font-size:12px;font-weight:700;}
+  .btn-outline{background:none;border:1.5px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 12px;font-size:12px;}
+
+  .tab{border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:600;background:none;padding:8px 16px;border-radius:22px;font-size:13px;transition:all .2s;white-space:nowrap;color:var(--muted);}
+  .tab.active{background:var(--green);color:#fff;}
+  .tab:not(.active):hover{background:var(--green-light);color:var(--green);}
+  .tab-add{border:1.5px dashed #ccc;color:#bbb;border-radius:22px;}
+
+  /* ── Search ── */
+  #search{border:1.5px solid var(--border);border-radius:9px;padding:8px 12px;font-family:'Nunito',sans-serif;font-size:13px;background:var(--cream);outline:none;color:var(--text);width:130px;transition:border-color .2s;}
+  #search:focus{border-color:var(--green);}
+
+  /* ── Main content ── */
+  #main{max-width:900px;margin:0 auto;padding:24px 18px 60px;}
+
+  /* ── Grid ── */
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+
+  /* ── Card ── */
+  .card{background:#fff;border-radius:18px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s;}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+  .card-hero{height:155px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .card-hero-emoji{font-size:60px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.15));position:relative;z-index:1;}
+  .card-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.18) 0%,transparent 60%);}
+  .card-body{padding:12px 15px 15px;}
+  .card-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.3;}
+  .card-desc{font-size:12px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .card-meta{margin-top:8px;display:flex;align-items:center;gap:5px;font-size:11px;color:#bbb;}
+
+  /* ── Empty state ── */
+  #empty{text-align:center;padding:60px 20px;color:#bbb;}
+  #empty .empty-emoji{font-size:48px;margin-bottom:12px;}
+  #empty .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:#999;margin-bottom:8px;}
+
+  /* ── Recipe view ── */
+  #recipe-view{max-width:680px;margin:0 auto;padding-bottom:60px;}
+  .rv-hero{position:relative;height:240px;border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+  .rv-hero-emoji{font-size:90px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.2));position:relative;z-index:1;}
+  .rv-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.6) 100%);}
+  .rv-back{position:absolute;top:14px;left:14px;z-index:10;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;border:none;cursor:pointer;border-radius:20px;padding:7px 16px;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;}
+  .rv-title-block{position:absolute;bottom:0;left:0;right:0;padding:16px 20px;z-index:10;}
+  .rv-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:#fff;line-height:1.2;text-shadow:0 1px 6px rgba(0,0,0,.5);}
+  .rv-desc{color:rgba(255,255,255,.85);font-size:13px;margin-top:4px;}
+  .rv-meta{background:#fff;padding:11px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .rv-source{font-size:12px;color:var(--green);font-weight:700;text-decoration:none;}
+  .rv-actions{margin-left:auto;display:flex;gap:7px;}
+  .rv-section{margin-bottom:20px;}
+  .rv-section-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:10px;}
+
+  /* ── Servings ── */
+  .servings-box{background:#fff;border-radius:14px;padding:13px 17px;border:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .servings-label{font-weight:600;font-size:13px;color:var(--muted);}
+  .servings-ctrl{display:flex;align-items:center;gap:10px;}
+  .srv-btn{width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:700;transition:all .15s;}
+  .srv-btn:hover{background:var(--green-mid);}
+  .srv-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--green);min-width:36px;text-align:center;line-height:1;}
+  .srv-unit{font-size:10px;color:#aaa;text-align:center;}
+  .srv-reset{font-size:11px;color:#aaa;background:none;border:1px solid #ddd;border-radius:20px;padding:3px 10px;cursor:pointer;font-family:'Nunito',sans-serif;}
+
+  /* ── Equipment tags ── */
+  .eq-tag{background:var(--cream2);color:#5A4A2A;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;}
+
+  /* ── Ingredients ── */
+  .ing-list{background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--border);}
+  .ing-row{padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #F5F1EA;}
+  .ing-row:last-child{border-bottom:none;}
+  .ing-amt{font-weight:700;color:var(--green);min-width:70px;font-size:14px;flex-shrink:0;}
+  .ing-name{font-size:13px;color:var(--text);}
+
+  /* ── Steps ── */
+  .step-card{background:#fff;border-radius:14px;padding:13px 15px;border:1.5px solid var(--border);transition:all .2s;margin-bottom:9px;}
+  .step-card.done{opacity:.65;border-color:var(--green);}
+  .step-inner{display:flex;align-items:flex-start;gap:10px;}
+  .step-num{width:22px;height:22px;border-radius:50%;background:var(--cream2);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .2s;}
+  .step-num.done{background:var(--green);color:#fff;}
+  .step-content{flex:1;}
+  .step-title{font-weight:700;font-size:13px;margin-bottom:4px;}
+  .step-text{font-size:13px;color:#555;line-height:1.65;}
+
+  /* ── Timer ── */
+  .timer-btn{border:1.5px solid var(--green);background:var(--green-light);color:var(--green);border-radius:20px;padding:4px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;margin-top:8px;display:inline-block;}
+  .timer-btn.running{background:var(--green);color:#fff;}
+  .timer-btn.finished{background:var(--terra);border-color:var(--terra);color:#fff;}
+  .timer-badge{background:var(--green-light);color:var(--green);border-radius:20px;padding:3px 11px;font-size:12px;font-weight:700;display:inline-block;margin-top:8px;}
+
+  /* ── Tips ── */
+  .tips-box{background:linear-gradient(135deg,#FFFCEB,#FFF8D4);border-radius:14px;padding:14px 16px;border:1px solid #F0D98A;}
+  .tips-title{font-weight:700;font-size:13px;color:var(--gold);margin-bottom:5px;}
+  .tips-text{font-size:13px;color:#5A4A1A;line-height:1.75;}
+
+  /* ── Overlay / Modal ── */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px;}
+  .modal{background:var(--cream);border-radius:20px;width:100%;max-width:620px;margin:auto;overflow:hidden;}
+  .modal-header{background:var(--green);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;}
+  .modal-title{font-family:'Playfair Display',serif;color:#fff;font-size:18px;font-weight:700;}
+  .modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .modal-body{padding:18px 22px;max-height:72vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+  .modal-footer{padding:13px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+  /* ── Form inputs ── */
+  .field label{font-size:11px;font-weight:700;color:#888;display:block;margin-bottom:5px;letter-spacing:.4px;}
+  .inp{border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;font-family:'Nunito',sans-serif;font-size:14px;width:100%;background:#F7F5F0;outline:none;color:var(--text);transition:border-color .2s;}
+  .inp:focus{border-color:var(--green);}
+  textarea.inp{resize:vertical;min-height:70px;}
+  select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:#F7F5F0;padding-right:32px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid3{display:grid;grid-template-columns:72px 88px 1fr auto;gap:5px;align-items:center;margin-bottom:5px;}
+  .del-btn{border:1.5px solid var(--border);background:transparent;color:#aaa;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0;transition:all .2s;}
+  .del-btn:hover{border-color:var(--terra);color:var(--terra);background:#FFF5F2;}
+  .sub-add{background:var(--green-light);color:var(--green);border:none;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
+  .step-form{background:#F7F5F0;border-radius:10px;padding:11px;margin-bottom:7px;}
+
+  /* ── Confirm modal ── */
+  .confirm-modal{background:var(--cream);border-radius:20px;padding:28px;max-width:340px;width:100%;margin:auto;text-align:center;}
+
+  /* ── Section modal ── */
+  .sec-modal{background:var(--cream);border-radius:20px;padding:24px;max-width:360px;width:100%;margin:auto;}
+  .emoji-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+  .emoji-btn{font-size:18px;width:32px;height:32px;border-radius:7px;border:2px solid var(--border);background:#fff;cursor:pointer;transition:all .15s;}
+  .emoji-btn.selected{border-color:var(--green);background:var(--green-light);}
+
+  /* ── Animations ── */
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{animation:fadeIn .25s ease both;}
+  .step-card{animation:fadeIn .2s ease both;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="header-top">
+    <div id="logo" onclick="showHome()">📗 Mi Recetario</div>
+    <div id="header-actions">
+      <input id="search" type="text" placeholder="🔍 Buscar..." oninput="renderGrid()" autocomplete="off">
+      <button class="btn btn-primary" onclick="openForm(null)">+ Receta</button>
+      <button class="btn btn-reset" onclick="confirmReset()" title="Restablecer recetario">↺</button>
+    </div>
+  </div>
+  <div id="tabs"></div>
+</div>
+
+<div id="main">
+  <div id="home-view">
+    <div id="grid"></div>
+    <div id="empty" style="display:none">
+      <div class="empty-emoji" id="empty-emoji">🍽</div>
+      <div class="empty-title" id="empty-msg">Sección vacía</div>
+      <div style="font-size:13px;margin-bottom:18px;color:#bbb" id="empty-sub">Añade tu primera receta a esta sección.</div>
+    </div>
+  </div>
+  <div id="recipe-view" style="display:none"></div>
+</div>
+
+<!-- Modals container -->
+<div id="modals"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const SK = "recetario:v7";
+const UNITS = ["ml","l","g","kg","cucharadas","cucharadita","taza","unidades","pizca","al gusto",""];
+const EMOJIS_SEC = ["🍽","🥗","🍕","🍞","🥩","🍜","🎂","🥘","🫕","🍣","🍹","☕","🌮","🥙","🧁","🥞","🧆","🥐"];
+
+const VIS = {
+  r1:{g:"linear-gradient(135deg,#FFF8DC,#FFD700,#FFA500)",e:"🍦"},
+  r2:{g:"linear-gradient(135deg,#2C1A0E,#5C3317,#C8A882)",e:"🍪"},
+  r3:{g:"linear-gradient(135deg,#3A5A1E,#6A9A3A,#B8E090)",e:"🍃"},
+  r4:{g:"linear-gradient(135deg,#FF4081,#F50057,#FF80AB)",e:"🍓"},
+  r5:{g:"linear-gradient(135deg,#3E2723,#6D4C41,#BCAAA4)",e:"☕"},
+  r6:{g:"linear-gradient(135deg,#E65100,#FF8F00,#FFE082)",e:"🥭"},
+  r7:{g:"linear-gradient(135deg,#BF360C,#FF8F00,#80DEEA)",e:"🌴"},
+  r8:{g:"linear-gradient(135deg,#AD1457,#E91E63,#F8BBD0)",e:"🫐"},
+};
+const getVis = r => VIS[r.id] || {g:"linear-gradient(135deg,#E8E0D5,#C8BBAA)",e:"🍽"};
+
+const DEFAULT = {
+  sections:[{id:"helados",name:"Helados",emoji:"🍦"}],
+  recipes:[
+    {id:"r1",sectionId:"helados",title:"Vainilla Soft Serve",
+     description:"El soft serve perfecto para cucurucho en espiral. Base con pudding instantáneo para textura de heladería profesional.",
+     baseServings:4,source:"eatcreami.com",sourceUrl:"https://eatcreami.com",
+     equipment:["Ninja CREAMi NC701","Varillas o batidora de mano","Bol grande"],
+     ingredients:[
+       {id:"i1",name:"Nata para montar (35% MG)",amount:180,unit:"ml"},
+       {id:"i2",name:"Leche entera",amount:180,unit:"ml"},
+       {id:"i3",name:"Azúcar",amount:50,unit:"g"},
+       {id:"i4",name:"Pudding de vainilla instantáneo en polvo",amount:2,unit:"cucharadas"},
+       {id:"i5",name:"Extracto de vainilla puro",amount:1,unit:"cucharadita"},
+       {id:"i6",name:"Sal",amount:1,unit:"pizca"},
+     ],
+     steps:[
+       {id:"s1",title:"Mezclar la base",content:"En un bol mezcla la nata, la leche, el azúcar, el pudding, el extracto de vainilla y la sal. Bate con varillas 2 minutos hasta disolver el azúcar.",timer:null},
+       {id:"s2",title:"Congelar 24 horas",content:"Vierte en la tarrina Swirl, coloca la tapa y congela 24 horas a -18°C.",timer:86400},
+       {id:"s3",title:"Procesar en la NC701",content:"Selecciona SOFT SERVE → Helado. La Creamify procesará en 1-2 minutos.",timer:120},
+       {id:"s4",title:"Servir en cucurucho",content:"Activa el modo Swirl y sirve en espiral. ¡Consúmelo inmediatamente!",timer:null},
+     ],
+     tips:"Receta equilibrada (1:1 nata/leche). 🔼 Más cremoso: sustituye 60ml de leche por más nata. 🔽 Más ligero: sustituye 60ml de nata por más leche. El pudding instantáneo es el truco profesional — si no lo encuentras, añade 1 cucharada más de azúcar y 1 de maicena."},
+    {id:"r2",sectionId:"helados",title:"Cookies & Cream",
+     description:"El helado más popular del mundo. Base de vainilla cremosa con trozos generosos de galleta Oreo.",
+     baseServings:4,source:"eatcreami.com",sourceUrl:"https://eatcreami.com",
+     equipment:["Ninja CREAMi NC701","Varillas","Bol"],
+     ingredients:[
+       {id:"i1",name:"Nata para montar (35% MG)",amount:180,unit:"ml"},
+       {id:"i2",name:"Leche entera",amount:180,unit:"ml"},
+       {id:"i3",name:"Azúcar",amount:60,unit:"g"},
+       {id:"i4",name:"Extracto de vainilla",amount:1,unit:"cucharadita"},
+       {id:"i5",name:"Galletas Oreo (para el Mix-in, al final)",amount:6,unit:"unidades"},
+     ],
+     steps:[
+       {id:"s1",title:"Preparar base y congelar",content:"Mezcla la nata, la leche, el azúcar y la vainilla. Vierte en la tarrina y congela 24 horas.",timer:86400},
+       {id:"s2",title:"Primer procesado",content:"Procesa con el programa ICE CREAM (Helado de bola).",timer:120},
+       {id:"s3",title:"Mix-in de Oreos",content:"Haz un hueco en el centro, trocea las Oreos groseramente, colócalas dentro y procesa con MIX-IN.",timer:60},
+       {id:"s4",title:"Servir",content:"Sirve en bol o cucurucho. Para textura más firme, congela 30 min más.",timer:1800},
+     ],
+     tips:"Receta equilibrada (1:1 nata/leche). 🔼 Más cremoso: sustituye 60ml de leche por más nata. 🔽 Más ligero: al revés. No pongas las Oreos en la base antes de congelar — quedarán duras como piedras. Añádelas siempre con Mix-in."},
+    {id:"r3",sectionId:"helados",title:"Gelato de Pistacho",
+     description:"Gelato auténtico al estilo italiano. Intenso y denso con el color verde natural del pistacho.",
+     baseServings:4,source:"eatcreami.com",sourceUrl:"https://eatcreami.com",
+     equipment:["Ninja CREAMi NC701","Procesador de alimentos","Cazo pequeño","Varillas"],
+     ingredients:[
+       {id:"i1",name:"Leche entera",amount:160,unit:"ml"},
+       {id:"i2",name:"Nata para montar",amount:160,unit:"ml"},
+       {id:"i3",name:"Pistachos sin sal (crudos o tostados)",amount:70,unit:"g"},
+       {id:"i4",name:"Azúcar",amount:70,unit:"g"},
+       {id:"i5",name:"Yemas de huevo",amount:2,unit:"unidades"},
+       {id:"i6",name:"Extracto de vainilla",amount:1,unit:"cucharadita"},
+     ],
+     steps:[
+       {id:"s1",title:"Triturar los pistachos",content:"Tritura los pistachos hasta obtener una pasta fina. Mezcla con la leche, nata, azúcar, yemas y vainilla.",timer:null},
+       {id:"s2",title:"Cocinar la base",content:"Calienta a fuego medio-bajo removiendo constantemente hasta que espese ligeramente (5 min, sin hervir). Deja enfriar.",timer:300},
+       {id:"s3",title:"Congelar 24 horas",content:"Vierte en la tarrina Swirl y congela 24 horas.",timer:86400},
+       {id:"s4",title:"Procesar en la NC701",content:"Procesa con el programa GELATO. Si queda poco cremoso, usa Re-Spin.",timer:120},
+     ],
+     tips:"Receta equilibrada (1:1 nata/leche). 🔼 Más cremoso: sustituye 40ml de leche por más nata. 🔽 Más ligero: al revés (el gelato italiano tradicional usa más leche). Pasta de pistacho pura (sin azúcar): usa 3 cucharadas en lugar de los pistachos enteros."},
+    {id:"r4",sectionId:"helados",title:"Sorbete de Fresa",
+     description:"Sorbete 100% fruta, sin lácteos. Refrescante e intenso con el sabor puro de la fresa madura.",
+     baseServings:4,source:"eatcreami.com",sourceUrl:"https://eatcreami.com",
+     equipment:["Ninja CREAMi NC701","Batidora o procesador","Cazo pequeño","Colador fino (opcional)"],
+     ingredients:[
+       {id:"i1",name:"Fresas maduras (frescas o congeladas)",amount:400,unit:"g"},
+       {id:"i2",name:"Azúcar",amount:80,unit:"g"},
+       {id:"i3",name:"Agua",amount:60,unit:"ml"},
+       {id:"i4",name:"Zumo de limón",amount:1,unit:"cucharadas"},
+     ],
+     steps:[
+       {id:"s1",title:"Hacer el almíbar",content:"Calienta el azúcar con el agua a fuego suave hasta disolver. Deja enfriar.",timer:180},
+       {id:"s2",title:"Triturar las fresas",content:"Tritura las fresas con el zumo de limón y el almíbar frío. Cuela si quieres textura extra fina.",timer:null},
+       {id:"s3",title:"Congelar 24 horas",content:"Vierte en la tarrina Swirl y congela 24 horas.",timer:86400},
+       {id:"s4",title:"Procesar y servir",content:"Procesa con el programa SORBETE. Si queda granulado, usa Re-Spin.",timer:90},
+     ],
+     tips:"Disuelve bien el azúcar en el almíbar para evitar cristales de hielo. Si las fresas son muy dulces, reduce el azúcar a 60g. La misma receta funciona con mango, frambuesas, melocotón o maracuyá."},
+    {id:"r5",sectionId:"helados",title:"Soft Serve de Café Espresso",
+     description:"Soft serve cremoso con sabor intenso a café espresso. Para los que no pueden vivir sin su dosis de cafeína... en versión helado.",
+     baseServings:4,source:"eatcreami.com",sourceUrl:"https://eatcreami.com",
+     equipment:["Ninja CREAMi NC701","Cafetera","Varillas","Bol grande"],
+     ingredients:[
+       {id:"i1",name:"Nata para montar (35% MG)",amount:170,unit:"ml"},
+       {id:"i2",name:"Leche entera",amount:170,unit:"ml"},
+       {id:"i3",name:"Azúcar",amount:55,unit:"g"},
+       {id:"i4",name:"Café espresso frío (o café fuerte colado)",amount:60,unit:"ml"},
+       {id:"i5",name:"Café soluble instantáneo",amount:1,unit:"cucharadita"},
+       {id:"i6",name:"Pudding de vainilla instantáneo en polvo",amount:1,unit:"cucharadas"},
+       {id:"i7",name:"Sal",amount:1,unit:"pizca"},
+     ],
+     steps:[
+       {id:"s1",title:"Preparar el café",content:"Prepara un espresso doble y deja enfriar completamente. Nunca añadas café caliente a la mezcla.",timer:null},
+       {id:"s2",title:"Mezclar la base",content:"Mezcla todos los ingredientes con varillas 2 minutos hasta disolver.",timer:null},
+       {id:"s3",title:"Congelar 24 horas",content:"Vierte en la tarrina Swirl y congela 24 horas a -18°C.",timer:86400},
+       {id:"s4",title:"Procesar en la NC701",content:"Selecciona SOFT SERVE → Helado. Listo en 1-2 minutos.",timer:120},
+       {id:"s5",title:"Servir",content:"Sirve en cucurucho en espiral o en vaso. Espolvorea cacao o canela por encima.",timer:null},
+     ],
+     tips:"Receta equilibrada (1:1 nata/leche). 🔼 Más cremoso: sustituye 50ml de leche por más nata. 🔽 Más ligero: al revés. El doble café (espresso + soluble) es clave — el frío atenúa mucho los aromas. Toque gourmet: 1 cucharadita de Kahlúa o Tía María antes de congelar."},
+    {id:"r6",sectionId:"helados",title:"Sorbete de Mango",
+     description:"Sorbete intenso y refrescante con el sabor puro del mango maduro. Sin lácteos, ligero y tropical.",
+     baseServings:4,source:"",sourceUrl:"",
+     equipment:["Ninja CREAMi NC701","Batidora o procesador","Cazo pequeño"],
+     ingredients:[
+       {id:"i1",name:"Mango maduro pelado y troceado (aprox. 2 mangos grandes)",amount:450,unit:"g"},
+       {id:"i2",name:"Azúcar",amount:70,unit:"g"},
+       {id:"i3",name:"Agua",amount:50,unit:"ml"},
+       {id:"i4",name:"Zumo de lima (o limón)",amount:2,unit:"cucharadas"},
+       {id:"i5",name:"Jengibre fresco rallado (opcional)",amount:1,unit:"cucharadita"},
+     ],
+     steps:[
+       {id:"s1",title:"Hacer el almíbar",content:"Calienta el azúcar con el agua a fuego suave hasta disolver. Deja enfriar.",timer:180},
+       {id:"s2",title:"Triturar el mango",content:"Tritura el mango con el zumo de lima, el jengibre y el almíbar frío hasta obtener un puré muy liso.",timer:null},
+       {id:"s3",title:"Congelar 24 horas",content:"Vierte en la tarrina Swirl y congela 24 horas a -18°C.",timer:86400},
+       {id:"s4",title:"Procesar y servir",content:"Procesa con el programa SORBETE. Si queda granulado, usa Re-Spin.",timer:90},
+     ],
+     tips:"El mango Ataulfo o Manila es el más aromático. El jengibre fresco eleva el sabor a otro nivel. Si el mango no es muy dulce, sube el azúcar a 90g."},
+    {id:"r7",sectionId:"helados",title:"Helado Cremoso de Mango y Coco",
+     description:"Helado tropical cremoso con base de nata y puré de mango fresco. Más indulgente que el sorbete.",
+     baseServings:4,source:"",sourceUrl:"",
+     equipment:["Ninja CREAMi NC701","Batidora o procesador","Bol grande","Varillas"],
+     ingredients:[
+       {id:"i1",name:"Mango maduro pelado y troceado (aprox. 1,5 mangos grandes)",amount:300,unit:"g"},
+       {id:"i2",name:"Nata para montar (35% MG)",amount:130,unit:"ml"},
+       {id:"i3",name:"Leche entera",amount:130,unit:"ml"},
+       {id:"i4",name:"Azúcar",amount:55,unit:"g"},
+       {id:"i5",name:"Zumo de lima",amount:1,unit:"cucharadas"},
+       {id:"i6",name:"Extracto de vainilla",amount:1,unit:"cucharadita"},
+     ],
+     steps:[
+       {id:"s1",title:"Triturar el mango",content:"Tritura el mango con el zumo de lima hasta obtener un puré muy liso.",timer:null},
+       {id:"s2",title:"Mezclar la base",content:"Mezcla el puré con la nata, la leche, el azúcar y la vainilla. Bate con varillas hasta disolver el azúcar.",timer:null},
+       {id:"s3",title:"Congelar 24 horas",content:"Vierte en la tarrina Swirl y congela 24 horas a -18°C.",timer:86400},
+       {id:"s4",title:"Procesar y servir",content:"Procesa con el programa ICE CREAM. Si queda poco cremoso, usa Re-Spin.",timer:120},
+     ],
+     tips:"Receta equilibrada (1:1 nata/leche). 🔼 Más cremoso: sustituye 50ml de leche por nata. 🔽 Más ligero: al revés. 🥥 Versión tropical: sustituye la leche entera por leche de coco de lata (entera) — potencia el sabor tropical. Sirve con coco rallado tostado."},
+    {id:"r8",sectionId:"helados",title:"Yogur Helado de Frutos Rojos",
+     description:"Frozen yogurt cremoso y refrescante con yogur griego natural y frutos rojos. Más ligero que un helado tradicional, con un toque ácido irresistible.",
+     baseServings:4,source:"",sourceUrl:"",
+     equipment:["Ninja CREAMi NC701","Batidora o procesador","Bol","Colador fino (opcional)"],
+     ingredients:[
+       {id:"i1",name:"Yogur griego natural entero (sin azúcar)",amount:400,unit:"g"},
+       {id:"i2",name:"Frutos rojos variados (fresas, frambuesas, arándanos, moras)",amount:150,unit:"g"},
+       {id:"i3",name:"Miel o azúcar",amount:3,unit:"cucharadas"},
+       {id:"i4",name:"Zumo de limón",amount:1,unit:"cucharadita"},
+       {id:"i5",name:"Extracto de vainilla",amount:1,unit:"cucharadita"},
+     ],
+     steps:[
+       {id:"s1",title:"Triturar los frutos rojos",content:"Tritura los frutos rojos con el zumo de limón hasta obtener un puré. Si quieres textura más fina y sin pepitas, pasa por un colador. Reserva.",timer:null},
+       {id:"s2",title:"Mezclar la base",content:"En un bol mezcla el yogur griego con la miel, el extracto de vainilla y el puré de frutos rojos. Bate bien hasta integrar todo.",timer:null},
+       {id:"s3",title:"Congelar 24 horas",content:"Vierte la mezcla en la tarrina Swirl. Coloca la tapa y congela 24 horas a -18°C.",timer:86400},
+       {id:"s4",title:"Procesar en la NC701",content:"Selecciona el programa YOGUR HELADO. Si queda granulado, usa Re-Spin una vez.",timer:120},
+       {id:"s5",title:"Servir",content:"Sirve en bol o cucurucho. Decora con frutos rojos frescos y un chorrito de miel.",timer:null},
+     ],
+     tips:"Usa yogur griego entero (no desnatado) — la grasa es clave para que quede cremoso. Con desnatado puede quedar granulado y necesitar más Re-Spins. 🔼 Más cremoso: añade 2 cucharadas de nata o queso crema. 🔽 Más ligero: yogur desnatado y stevia. 🍓 Truco Mix-in: procesa primero el yogur solo y luego añade los frutos rojos enteros con MIX-IN — quedan trozos visibles y la textura es espectacular."},
+  ]
+};
+
+// ── STATE ─────────────────────────────────────────────────────────
+let state = null;
+let currentSection = "helados";
+let currentView = "home"; // home | recipe
+let currentRecipeId = null;
+let stepDone = {};
+let stepTimers = {};
+
+// ── STORAGE ───────────────────────────────────────────────────────
+function loadState(){
+  try{
+    const raw = localStorage.getItem(SK);
+    if(raw){
+      const stored = JSON.parse(raw);
+      // Merge: add any DEFAULT recipes missing from stored
+      const ids = new Set(stored.recipes.map(r=>r.id));
+      const missing = DEFAULT.recipes.filter(r=>!ids.has(r.id));
+      state = {...stored, recipes:[...stored.recipes,...missing]};
+    } else {
+      state = JSON.parse(JSON.stringify(DEFAULT));
+    }
+  } catch(e){
+    state = JSON.parse(JSON.stringify(DEFAULT));
+  }
+  // Clean old keys
+  ["v1","v2","v3","v4","v5","v6"].forEach(v=>{
+    try{localStorage.removeItem("recetario:"+v);}catch(e){}
+  });
+}
+function saveState(){
+  try{ localStorage.setItem(SK, JSON.stringify(state)); }catch(e){}
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+const uid = () => Math.random().toString(36).slice(2,9);
+const fmt = s => s>=3600?`${Math.round(s/3600)}h`:`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function scaleAmt(n,ratio){
+  const v=parseFloat(n)*ratio;
+  return Number.isInteger(v)?String(v):parseFloat(v.toFixed(1)).toString();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+function renderTabs(){
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = state.sections.map(s=>`
+    <button class="tab${s.id===currentSection?" active":""}" onclick="setSection('${s.id}')">${s.emoji} ${esc(s.name)}</button>
+  `).join("") + `<button class="tab tab-add" onclick="openSectionModal()">+ Sección</button>`;
+}
+
+function setSection(id){
+  currentSection=id;
+  document.getElementById("search").value="";
+  renderTabs();
+  renderGrid();
+}
+
+// ── GRID ──────────────────────────────────────────────────────────
+function renderGrid(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const recipes = state.recipes.filter(r=>r.sectionId===currentSection&&(!q||r.title.toLowerCase().includes(q)));
+  const grid = document.getElementById("grid");
+  const empty = document.getElementById("empty");
+  if(recipes.length===0){
+    grid.style.display="none";
+    empty.style.display="block";
+    const sec = state.sections.find(s=>s.id===currentSection);
+    document.getElementById("empty-emoji").textContent = q?"🔍":(sec?.emoji||"🍽");
+    document.getElementById("empty-msg").textContent = q?"Sin resultados":"Sección vacía";
+    document.getElementById("empty-sub").textContent = q?"Prueba con otro término.":"Añade tu primera receta a esta sección.";
+  } else {
+    grid.style.display="grid";
+    empty.style.display="none";
+    grid.innerHTML = recipes.map(r=>{
+      const {g,e}=getVis(r);
+      return `<div class="card" onclick="showRecipe('${r.id}')">
+        <div class="card-hero" style="background:${g}">
+          <span class="card-hero-emoji">${e}</span>
+          <div class="card-hero-overlay"></div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${esc(r.title)}</div>
+          <div class="card-desc">${esc(r.description)}</div>
+          <div class="card-meta">
+            <span>🍽 ${r.baseServings} raciones</span>
+            <span>·</span>
+            <span>${r.ingredients.length} ingredientes</span>
+            ${r.source?`<span>·</span><span style="color:var(--green)">📖</span>`:""}
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+}
+
+// ── HOME / RECIPE ────────────────────────────────────────────────
+function showHome(){
+  currentView="home";
+  currentRecipeId=null;
+  stepDone={};
+  clearAllTimers();
+  document.getElementById("home-view").style.display="block";
+  document.getElementById("recipe-view").style.display="none";
+  document.getElementById("header-actions").style.display="flex";
+  renderTabs();
+  renderGrid();
+}
+
+function showRecipe(id){
+  currentView="recipe";
+  currentRecipeId=id;
+  stepDone={};
+  clearAllTimers();
+  const r = state.recipes.find(r=>r.id===id);
+  if(!r){showHome();return;}
+  document.getElementById("home-view").style.display="none";
+  document.getElementById("header-actions").style.display="none";
+  const {g,e}=getVis(r);
+  const sv = r.baseServings;
+  const rv = document.getElementById("recipe-view");
+  rv.style.display="block";
+  rv.dataset.servings = sv;
+  rv.dataset.baseServings = sv;
+  rv.dataset.recipeId = id;
+  renderRecipeView(r, sv);
+}
+
+function renderRecipeView(r, sv){
+  const ratio = sv / r.baseServings;
+  const {g,e}=getVis(r);
+  const rv = document.getElementById("recipe-view");
+  rv.innerHTML = `
+    <div class="rv-hero" style="background:${g}">
+      <span class="rv-hero-emoji">${e}</span>
+      <div class="rv-hero-overlay"></div>
+      <button class="rv-back" onclick="showHome()">← Volver</button>
+      <div class="rv-title-block">
+        <div class="rv-title">${esc(r.title)}</div>
+        <div class="rv-desc">${esc(r.description)}</div>
+      </div>
+    </div>
+    <div class="rv-meta">
+      ${r.source?`<a href="${esc(r.sourceUrl||'#')}" target="_blank" class="rv-source">📖 ${esc(r.source)}</a>`:""}
+      <div class="rv-actions">
+        <button class="btn btn-ghost" onclick="openForm('${r.id}')">✏️ Editar</button>
+        <button class="btn btn-danger" onclick="confirmDelete('${r.id}')">🗑</button>
+      </div>
+    </div>
+    <div style="padding:20px 4px 0">
+      <!-- Raciones -->
+      <div class="rv-section">
+        <div class="servings-box">
+          <span class="servings-label">Ajustar raciones:</span>
+          <div class="servings-ctrl">
+            <button class="srv-btn" onclick="changeSv(-1)">−</button>
+            <div>
+              <div class="srv-num" id="sv-num">${sv}</div>
+              <div class="srv-unit">raciones</div>
+            </div>
+            <button class="srv-btn" onclick="changeSv(1)">+</button>
+          </div>
+          ${sv!==r.baseServings?`<button class="srv-reset" onclick="resetSv()">Reset (${r.baseServings})</button>`:""}
+        </div>
+      </div>
+      <!-- Equipo -->
+      ${r.equipment?.filter(Boolean).length?`
+      <div class="rv-section">
+        <div class="rv-section-title">🔧 Equipo</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">${r.equipment.filter(Boolean).map(eq=>`<span class="eq-tag">${esc(eq)}</span>`).join("")}</div>
+      </div>`:""}
+      <!-- Ingredientes -->
+      <div class="rv-section">
+        <div class="rv-section-title">🛒 Ingredientes</div>
+        <div class="ing-list" id="ing-list">
+          ${r.ingredients.map(ing=>`
+            <div class="ing-row">
+              <div class="ing-amt" data-base="${ing.amount}" data-unit="${esc(ing.unit)}">${scaleAmt(ing.amount,ratio)}${ing.unit?" "+ing.unit:""}</div>
+              <div class="ing-name">${esc(ing.name)}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <!-- Pasos -->
+      <div class="rv-section">
+        <div class="rv-section-title">👨‍🍳 Preparación</div>
+        <div id="steps-list">
+          ${r.steps.map((st,i)=>renderStep(st,i,stepDone[st.id])).join("")}
+        </div>
+      </div>
+      <!-- Tips -->
+      ${r.tips?`
+      <div class="rv-section">
+        <div class="tips-box">
+          <div class="tips-title">💡 Trucos del chef</div>
+          <div class="tips-text">${esc(r.tips)}</div>
+        </div>
+      </div>`:""}
+    </div>
+  `;
+}
+
+function renderStep(st, i, done){
+  const timerHtml = st.timer ? (st.timer >= 86400
+    ? `<div class="timer-badge">⏰ ${fmt(st.timer)}</div>`
+    : `<button class="timer-btn" id="tbtn-${st.id}" onclick="toggleTimer('${st.id}',${st.timer})">▶ ${fmt(st.timer)}</button>`
+  ) : "";
+  return `<div class="step-card${done?" done":""}" id="step-${st.id}">
+    <div class="step-inner">
+      <div class="step-num${done?" done":""}" onclick="toggleStep('${st.id}')">${done?"✓":i+1}</div>
+      <div class="step-content">
+        <div class="step-title">${esc(st.title)}</div>
+        <div class="step-text">${esc(st.content)}</div>
+        ${timerHtml}
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleStep(id){
+  stepDone[id]=!stepDone[id];
+  const card=document.getElementById("step-"+id);
+  const num=card.querySelector(".step-num");
+  const r=state.recipes.find(r=>r.id===currentRecipeId);
+  const idx=r.steps.findIndex(s=>s.id===id);
+  if(stepDone[id]){card.classList.add("done");num.classList.add("done");num.textContent="✓";}
+  else{card.classList.remove("done");num.classList.remove("done");num.textContent=idx+1;}
+}
+
+// ── TIMERS ────────────────────────────────────────────────────────
+function clearAllTimers(){
+  Object.values(stepTimers).forEach(iv=>clearInterval(iv));
+  stepTimers={};
+}
+function toggleTimer(id, secs){
+  const btn=document.getElementById("tbtn-"+id);
+  if(!btn)return;
+  if(stepTimers[id+"_done"]){
+    // Reset
+    clearInterval(stepTimers[id]);
+    delete stepTimers[id];
+    delete stepTimers[id+"_done"];
+    btn.className="timer-btn";
+    btn.textContent=`▶ ${fmt(secs)}`;
+    return;
+  }
+  if(stepTimers[id]){
+    // Pause
+    clearInterval(stepTimers[id]);
+    delete stepTimers[id];
+    const rem=parseInt(btn.dataset.rem)||secs;
+    btn.className="timer-btn";
+    btn.textContent=`▶ ${fmt(rem)}`;
+    return;
+  }
+  // Start
+  let rem=parseInt(btn.dataset.rem)||secs;
+  btn.className="timer-btn running";
+  stepTimers[id]=setInterval(()=>{
+    rem--;
+    btn.dataset.rem=rem;
+    if(rem<=0){
+      clearInterval(stepTimers[id]);
+      delete stepTimers[id];
+      stepTimers[id+"_done"]=true;
+      btn.className="timer-btn finished";
+      btn.textContent="✓ Listo — toca para reiniciar";
+      return;
+    }
+    btn.textContent=`⏱ ${fmt(rem)}`;
+  },1000);
+}
+
+// ── SERVINGS ──────────────────────────────────────────────────────
+function changeSv(delta){
+  const rv=document.getElementById("recipe-view");
+  const r=state.recipes.find(r=>r.id===rv.dataset.recipeId);
+  if(!r)return;
+  let sv=Math.max(1,parseInt(rv.dataset.servings)+delta);
+  rv.dataset.servings=sv;
+  // Update num
+  document.getElementById("sv-num").textContent=sv;
+  // Update amounts
+  const ratio=sv/r.baseServings;
+  document.querySelectorAll(".ing-amt").forEach(el=>{
+    const base=parseFloat(el.dataset.base);
+    const unit=el.dataset.unit;
+    el.textContent=scaleAmt(base,ratio)+(unit?" "+unit:"");
+  });
+  // Show/hide reset
+  const box=document.querySelector(".servings-box");
+  let rb=box.querySelector(".srv-reset");
+  if(sv!==r.baseServings){
+    if(!rb){
+      rb=document.createElement("button");rb.className="srv-reset";
+      rb.onclick=resetSv;box.appendChild(rb);
+    }
+    rb.textContent=`Reset (${r.baseServings})`;
+  } else {
+    if(rb)rb.remove();
+  }
+}
+function resetSv(){
+  const rv=document.getElementById("recipe-view");
+  const r=state.recipes.find(r=>r.id===rv.dataset.recipeId);
+  if(!r)return;
+  rv.dataset.servings=r.baseServings;
+  changeSv(0);
+}
+
+// ── FORM ─────────────────────────────────────────────────────────
+function openForm(id){
+  const isNew=!id;
+  const r=isNew?{
+    id:uid(),sectionId:currentSection,title:"",description:"",
+    baseServings:4,source:"",sourceUrl:"",
+    equipment:[""],
+    ingredients:[{id:uid(),name:"",amount:"",unit:"g"}],
+    steps:[{id:uid(),title:"",content:"",timer:""}],
+    tips:""
+  }:JSON.parse(JSON.stringify(state.recipes.find(x=>x.id===id)));
+
+  const sectionOpts=state.sections.map(s=>`<option value="${s.id}"${s.id===r.sectionId?" selected":""}>${s.emoji} ${esc(s.name)}</option>`).join("");
+
+  const eqHtml=()=>(r.equipment||[""]).map((eq,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:5px">
+      <input class="inp" placeholder="Ej: Batidora" value="${esc(eq)}" oninput="fEq(${i},this.value)">
+      <button class="del-btn" onclick="fDelEq(${i})">×</button>
+    </div>`).join("");
+
+  const ingHtml=()=>r.ingredients.map((ing,i)=>`
+    <div class="grid3">
+      <input class="inp" type="number" placeholder="Cant." value="${ing.amount||""}" oninput="fIng(${i},'amount',this.value)">
+      <select class="inp" onchange="fIng(${i},'unit',this.value)">
+        ${UNITS.map(u=>`<option value="${u}"${u===ing.unit?" selected":""}>${u||"—"}</option>`).join("")}
+      </select>
+      <input class="inp" placeholder="Ingrediente" value="${esc(ing.name)}" oninput="fIng(${i},'name',this.value)">
+      <button class="del-btn" onclick="fDelIng(${i})">×</button>
+    </div>`).join("");
+
+  const stHtml=()=>r.steps.map((st,i)=>`
+    <div class="step-form" id="stf-${i}">
+      <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</span>
+        <input class="inp" style="flex:1" placeholder="Título del paso" value="${esc(st.title)}" oninput="fSt(${i},'title',this.value)">
+        <button class="del-btn" onclick="fDelSt(${i})">×</button>
+      </div>
+      <textarea class="inp" style="min-height:60px" placeholder="Descripción..." oninput="fSt(${i},'content',this.value)">${esc(st.content)}</textarea>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:#888;flex-shrink:0">⏱ Timer (seg):</span>
+        <input class="inp" style="width:100px" type="number" placeholder="300" value="${st.timer||""}" oninput="fSt(${i},'timer',this.value)">
+        <span style="font-size:10px;color:#bbb">vacío = sin timer</span>
+      </div>
+    </div>`).join("");
+
+  const html=`
+  <div class="overlay" id="form-overlay" onclick="if(event.target===this)closeForm()">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">${isNew?"✨ Nueva receta":"✏️ Editar receta"}</div>
+        <button class="modal-close" onclick="closeForm()">×</button>
+      </div>
+      <div class="modal-body" id="form-body">
+        <div class="grid2">
+          <div class="field"><label>SECCIÓN</label><select class="inp" onchange="fUp('sectionId',this.value)">${sectionOpts}</select></div>
+          <div class="field"><label>RACIONES BASE</label><input class="inp" type="number" min="1" value="${r.baseServings}" oninput="fUp('baseServings',this.value)"></div>
+        </div>
+        <div class="field"><label>NOMBRE *</label><input class="inp" placeholder="Nombre de la receta" value="${esc(r.title)}" oninput="fUp('title',this.value)"></div>
+        <div class="field"><label>DESCRIPCIÓN</label><textarea class="inp" placeholder="Breve descripción..." oninput="fUp('description',this.value)">${esc(r.description)}</textarea></div>
+        <div class="grid2">
+          <div class="field"><label>FUENTE</label><input class="inp" placeholder="cookidoo.es" value="${esc(r.source)}" oninput="fUp('source',this.value)"></div>
+          <div class="field"><label>URL FUENTE</label><input class="inp" placeholder="https://..." value="${esc(r.sourceUrl)}" oninput="fUp('sourceUrl',this.value)"></div>
+        </div>
+        <div class="field">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <label style="margin:0">EQUIPO</label>
+            <button class="sub-add" onclick="fAddEq()">+ Añadir</button>
+          </div>
+          <div id="eq-list">${eqHtml()}</div>
+        </div>
+        <div class="field">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <label style="margin:0">INGREDIENTES</label>
+            <button class="sub-add" onclick="fAddIng()">+ Añadir</button>
+          </div>
+          <div id="ing-list-f">${ingHtml()}</div>
+        </div>
+        <div class="field">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <label style="margin:0">PASOS</label>
+            <button class="sub-add" onclick="fAddSt()">+ Añadir</button>
+          </div>
+          <div id="st-list">${stHtml()}</div>
+        </div>
+        <div class="field"><label>💡 TRUCOS DEL CHEF</label><textarea class="inp" style="min-height:80px" placeholder="Trucos, variaciones, consejos..." oninput="fUp('tips',this.value)">${esc(r.tips)}</textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeForm()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveForm()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById("modals").innerHTML=html;
+  window._formRec=r;
+
+  function rerender(){
+    document.getElementById("eq-list").innerHTML=eqHtml();
+    document.getElementById("ing-list-f").innerHTML=ingHtml();
+    document.getElementById("st-list").innerHTML=stHtml();
+  }
+  window.fUp=(k,v)=>{r[k]=v;};
+  window.fEq=(i,v)=>{r.equipment[i]=v;};
+  window.fDelEq=(i)=>{r.equipment.splice(i,1);rerender();};
+  window.fAddEq=()=>{r.equipment.push("");rerender();};
+  window.fIng=(i,k,v)=>{r.ingredients[i][k]=v;};
+  window.fDelIng=(i)=>{r.ingredients.splice(i,1);rerender();};
+  window.fAddIng=()=>{r.ingredients.push({id:uid(),name:"",amount:"",unit:"g"});rerender();};
+  window.fSt=(i,k,v)=>{r.steps[i][k]=v;};
+  window.fDelSt=(i)=>{r.steps.splice(i,1);rerender();};
+  window.fAddSt=()=>{r.steps.push({id:uid(),title:"",content:"",timer:""});rerender();};
+}
+
+function closeForm(){document.getElementById("modals").innerHTML="";}
+
+function saveForm(){
+  const r=window._formRec;
+  if(!r.title.trim()){alert("El nombre de la receta es obligatorio.");return;}
+  r.baseServings=parseInt(r.baseServings)||4;
+  r.ingredients=r.ingredients.map(x=>({...x,amount:parseFloat(x.amount)||0}));
+  r.steps=r.steps.map(x=>({...x,timer:x.timer?parseInt(x.timer)||null:null}));
+  r.equipment=(r.equipment||[]).filter(Boolean);
+  const idx=state.recipes.findIndex(x=>x.id===r.id);
+  if(idx>=0)state.recipes[idx]=r; else state.recipes.push(r);
+  saveState();
+  closeForm();
+  currentSection=r.sectionId;
+  if(currentView==="recipe"){showRecipe(r.id);}
+  else{renderTabs();renderGrid();}
+}
+
+// ── DELETE ────────────────────────────────────────────────────────
+function confirmDelete(id){
+  document.getElementById("modals").innerHTML=`
+  <div class="overlay">
+    <div class="confirm-modal">
+      <div style="font-size:38px;margin-bottom:10px">🗑</div>
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:6px">¿Eliminar receta?</div>
+      <div style="font-size:13px;color:#888;margin-bottom:22px">Esta acción no se puede deshacer.</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-outline" onclick="document.getElementById('modals').innerHTML=''">Cancelar</button>
+        <button class="btn" style="background:var(--terra);color:#fff;border-radius:10px;padding:9px 16px;font-size:13px" onclick="deleteRecipe('${id}')">Eliminar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function deleteRecipe(id){
+  state.recipes=state.recipes.filter(r=>r.id!==id);
+  saveState();
+  document.getElementById("modals").innerHTML="";
+  showHome();
+}
+
+// ── RESET ─────────────────────────────────────────────────────────
+function confirmReset(){
+  if(!confirm("¿Restablecer el recetario a las 8 recetas originales?\nSe perderán las recetas y secciones añadidas."))return;
+  localStorage.removeItem(SK);
+  state=JSON.parse(JSON.stringify(DEFAULT));
+  currentSection="helados";
+  showHome();
+}
+
+// ── SECTION MODAL ─────────────────────────────────────────────────
+function openSectionModal(){
+  let selEmoji="🍽";
+  const emojis=EMOJIS_SEC;
+  const render=()=>{
+    document.getElementById("emoji-grid").innerHTML=emojis.map(e=>`
+      <button class="emoji-btn${e===selEmoji?" selected":""}" onclick="selSec('${e}')">${e}</button>`).join("");
+  };
+  document.getElementById("modals").innerHTML=`
+  <div class="overlay" onclick="if(event.target===this)document.getElementById('modals').innerHTML=''">
+    <div class="sec-modal">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:16px">Nueva sección</div>
+      <div class="field" style="margin-bottom:12px">
+        <label>EMOJI</label>
+        <div class="emoji-grid" id="emoji-grid"></div>
+      </div>
+      <div class="field" style="margin-bottom:18px">
+        <label>NOMBRE *</label>
+        <input class="inp" id="sec-name" placeholder="Ej: Postres, Arroces...">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="document.getElementById('modals').innerHTML=''">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveSection()">Crear</button>
+      </div>
+    </div>
+  </div>`;
+  window.selSec=(e)=>{selEmoji=e;render();};
+  render();
+}
+
+function saveSection(){
+  const name=document.getElementById("sec-name").value.trim();
+  if(!name){alert("El nombre es obligatorio.");return;}
+  const emoji=document.querySelector(".emoji-btn.selected")?.textContent||"🍽";
+  const sec={id:uid(),name,emoji};
+  state.sections.push(sec);
+  saveState();
+  currentSection=sec.id;
+  document.getElementById("modals").innerHTML="";
+  renderTabs();
+  renderGrid();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+loadState();
+showHome();
+</script>
+</body>
+</html>
